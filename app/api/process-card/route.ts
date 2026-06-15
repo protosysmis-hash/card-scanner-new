@@ -12,13 +12,13 @@ export async function POST(req: NextRequest) {
     const key = apiKey || process.env.GEMINI_API_KEY;
 
     if (!key) {
-      return NextResponse.json({ error: "API Key configure nahi hai!" }, { status: 401 });
+      return NextResponse.json({ error: "API Key missing" }, { status: 401 });
     }
 
     const genAI = new GoogleGenerativeAI(key);
     
-    // Is baar hum versioned model use kar rahe hain
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+    // Is baar hum "gemini-1.5-pro" use kar rahe hain jo sabse zyada stable hai
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
     const base64Data = image.split(",")[1];
     
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result: JSON.parse(jsonString) });
     
   } catch (error: any) {
-    console.error("Backend Error:", error);
+    console.error("Backend Error Details:", error);
     return NextResponse.json({ 
       error: "Scanner Error", 
       details: error.message 
