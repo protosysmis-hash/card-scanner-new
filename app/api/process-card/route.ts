@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
           ],
         },
       ],
-      model: "llama-3.2-90b-vision-preview",
+      model: "llama-3.2-90b-vision-instruct", 
       response_format: { type: "json_object" },
     });
 
