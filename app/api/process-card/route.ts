@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
     const mimeType = "image/jpeg";
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `Extract details from this business card: name, jobTitle, company, email, phone, linkedinUrl. 
     Return the result in valid JSON format ONLY. 
