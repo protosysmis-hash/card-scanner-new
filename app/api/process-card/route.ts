@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Image missing" }, { status: 400 });
     }
 
-    // Vercel Environment variable ya di gayi API key use karein
     const key = apiKey || process.env.GEMINI_API_KEY;
 
     if (!key) {
@@ -18,8 +17,8 @@ export async function POST(req: NextRequest) {
 
     const genAI = new GoogleGenerativeAI(key);
     
-    // Yahan model ka naam sahi kiya gaya hai: 'gemini-1.5-flash'
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Is baar hum versioned model use kar rahe hain
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
     const base64Data = image.split(",")[1];
     
@@ -38,7 +37,8 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Backend Error:", error);
     return NextResponse.json({ 
-      error: "Scanner Error: " + error.message 
+      error: "Scanner Error", 
+      details: error.message 
     }, { status: 500 });
   }
 }
