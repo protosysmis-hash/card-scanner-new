@@ -1,37 +1,42 @@
-import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY; 
+    const { image, apiKey } = await req.json();
 
-    if (!apiKey) {
-      return NextResponse.json({ error: "Server Configuration Error: API Key missing" }, { status: 500 });
-    }
-
-    const { image } = await req.json();
     if (!image) {
-      return NextResponse.json({ error: "Missing image data" }, { status: 400 });
+      return NextResponse.json({ error: "Image missing" }, { status: 400 });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    // API Key yahan use karenge
+    const genAI = new GoogleGenerativeAI(apiKey || process.env.GEMINI_API_KEY || "");
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const base64Data = image.includes(',') ? image.split(',')[1] : image;
-    const mimeType = image.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+    // Base64 image ko part mein convert karo
+    const base64Data = image.split(",")[1];
+    
+    const prompt = `Extract contact details from this business card. Return ONLY a valid JSON object. 
+    Keys: name, jobTitle, company, email, phone, linkedinUrl, whatsappDraft. 
+    Ensure phone and email are accurate.`;
 
     const result = await model.generateContent([
-      "Extract contact info as JSON: name, jobTitle, company, email, phone, address. Only return the JSON object.",
-      { inlineData: { data: base64Data, mimeType: mimeType } },
+      prompt,
+      { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
     ]);
 
     const responseText = result.response.text();
-    const cleanJson = responseText.split("```json").join("").split("```").join("").trim();
     
-    return NextResponse.json({ result: JSON.parse(cleanJson) });
+    // Clean text to extract JSON (Removes markdown code blocks if present)
+    const jsonString = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
 
+    return NextResponse.json({ result: JSON.parse(jsonString) });
+    
   } catch (error: any) {
-    console.error("API ERROR:", error);
-    return NextResponse.json({ error: "Scanner Failed", details: error.message }, { status: 500 });
+    console.error("API Error Details:", error);
+    return NextResponse.json({ 
+      error: "Scanner Failed", 
+      details: error.message 
+    }, { status: 500 });
   }
 }
