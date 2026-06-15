@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Ye backend route business card image ko process karta hai
 export async function POST(req: NextRequest) {
   try {
     const { image, apiKey } = await req.json();
@@ -10,9 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Image missing" }, { status: 400 });
     }
 
-    // Pehle frontend se aayi key check karenge, phir Vercel environment variable
     const key = apiKey || process.env.GEMINI_API_KEY;
-
     if (!key) {
       return NextResponse.json({ error: "API Key configure nahi hai!" }, { status: 401 });
     }
@@ -20,11 +17,12 @@ export async function POST(req: NextRequest) {
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Base64 image ko process karne ke liye split kar rahe hain
     const base64Data = image.split(",")[1];
     
-    // AI ko instruction ki kya extract karna hai
-    const prompt = "Extract contact details from this business card. Return ONLY a valid JSON object. Keys: name, jobTitle, company, email, phone, linkedinUrl, whatsappDraft.";
+    // Instruction ko thoda aur sakht kiya hai taaki AI sirf JSON hi de
+    const prompt = `Extract contact details from this business card. 
+    Return ONLY a valid JSON object without any Markdown formatting or extra text. 
+    Keys required: name, jobTitle, company, email, phone, linkedinUrl, whatsappDraft.`;
 
     const result = await model.generateContent([
       prompt,
@@ -32,13 +30,21 @@ export async function POST(req: NextRequest) {
     ]);
 
     const responseText = result.response.text();
-    // JSON clean kar rahe hain
-    const jsonString = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    // --- ROBUST JSON PARSING ---
+    // AI kabhi-kabhi "Here is the JSON: { ... }" likh deta hai, ye use saaf kar dega
+    const jsonStart = responseText.indexOf('{');
+    const jsonEnd = responseText.lastIndexOf('}');
+    
+    if (jsonStart === -1 || jsonEnd === -1) {
+      throw new Error("AI did not return valid JSON: " + responseText);
+    }
 
-    return NextResponse.json({ result: JSON.parse(jsonString) });
+    const cleanJson = responseText.substring(jsonStart, jsonEnd + 1);
+    return NextResponse.json({ result: JSON.parse(cleanJson) });
     
   } catch (error: any) {
-    console.error("Backend Error:", error);
+    console.error("DEBUG ERROR:", error);
     return NextResponse.json({ 
       error: "Scanner Failed", 
       details: error.message 
