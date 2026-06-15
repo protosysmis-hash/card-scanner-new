@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
-// Initialize Groq client with API key from environment variables
+// Initialize Groq client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: NextRequest) {
@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
 
     const base64Image = image.includes(",") ? image.split(",")[1] : image;
 
-    // Using 11b model as it is highly stable for vision tasks on Groq
-    const modelName = "llama-3.2-11b-vision-preview";
+    // USE THIS MODEL. IT IS THE STABLE PRODUCTION MODEL.
+    const modelName = "llama-3.2-11b-vision-instruct";
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
