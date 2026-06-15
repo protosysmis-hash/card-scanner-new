@@ -5,7 +5,6 @@ export default function Home() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [cardData, setCardData] = useState<any>(null);
-  const [apiKey, setApiKey] = useState('');
 
   // --- MOBILE IMAGE COMPRESSION LOGIC ---
   const compressImage = (file: File): Promise<string> => {
@@ -63,21 +62,22 @@ export default function Home() {
       const response = await fetch('/api/process-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image }) // Sirf image bhej rahe hain
+        body: JSON.stringify({ image: base64Image })
       });
 
       const data = await response.json();
       
-      if (data.result) {
+      if (response.ok && data.result) {
         console.log("Scanned Data:", data.result);
         setCardData(data.result);
       } else {
+        // Yahan maine error detail dikhane ka code update kiya hai
         console.error("Scanner Error:", data.error);
-        alert("Scanner Error: " + data.error);
+        alert(`Scanner Error: ${data.error || "Unknown Error"}\nDetails: ${data.details || "No details provided"}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Frontend Fetch Error:", err);
-      alert("Frontend Fetch Error");
+      alert("Frontend Fetch Error: " + err.message);
     }
   };
 
@@ -130,7 +130,6 @@ export default function Home() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">CardToConnect Clone (100% FREE)</h1>
       
       <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        {/* API Key input hata diya kyunki backend se le rahe hain */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Upload or Take Photo of Card</label>
           <input 
