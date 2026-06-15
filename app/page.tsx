@@ -57,56 +57,52 @@ export default function Home() {
     }
   };
 
+  // --- NEW INTEGRATED SCAN LOGIC ---
+  const handleScan = async (base64Image: string) => {
+    try {
+      const response = await fetch('/api/process-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image }) // Sirf image bhej rahe hain
+      });
+
+      const data = await response.json();
+      
+      if (data.result) {
+        console.log("Scanned Data:", data.result);
+        setCardData(data.result);
+      } else {
+        console.error("Scanner Error:", data.error);
+        alert("Scanner Error: " + data.error);
+      }
+    } catch (err) {
+      console.error("Frontend Fetch Error:", err);
+      alert("Frontend Fetch Error");
+    }
+  };
+
   const processCard = async () => {
-    if (!image || !apiKey) {
-      alert("Please upload an image and enter your Gemini API Key!");
+    if (!image) {
+      alert("Please upload an image!");
       return;
     }
     setLoading(true);
-
-    try {
-      const res = await fetch('/api/process-card', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // Sirf ye part change hai: hum 'image' aur 'apiKey' dono bhej rahe hain
-        body: JSON.stringify({ image, apiKey }),
-      });
-      
-      const data = await res.json();
-      
-      // Error handling ko aur precise banaya hai
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to process card");
-      }
-      
-      setCardData(data.result);
-    } catch (error: any) {
-      console.error("Error processing card:", error);
-      alert("Error: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+    await handleScan(image);
+    setLoading(false);
   };
-  // --- UPDATED WHATSAPP LOGIC ---
+
+  // --- WHATSAPP LOGIC ---
   const sendWhatsApp = () => {
     if (!cardData?.phone) {
       alert("Phone number nahi mila!");
       return;
     }
-
-    // 1. Sirf numbers rakho
     let phone = cardData.phone.replace(/\D/g, '');
-
-    // 2. 10 digit number ke aage 91 lagao
     if (phone.length === 10) {
       phone = "91" + phone;
     }
-
-    // 3. Message encode karo
     const message = cardData.whatsappDraft || "Hi, it was great connecting with you!";
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-    // 4. Open karo
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -134,17 +130,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">CardToConnect Clone (100% FREE)</h1>
       
       <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Your Free Gemini API Key</label>
-          <input 
-            type="password" 
-            placeholder="AQ.Ab8RN..." 
-            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-        </div>
-
+        {/* API Key input hata diya kyunki backend se le rahe hain */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Upload or Take Photo of Card</label>
           <input 
@@ -163,7 +149,7 @@ export default function Home() {
           disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition disabled:bg-gray-400"
         >
-          {loading ? 'Processing / Compressing Image...' : 'Scan & Extract Card'}
+          {loading ? 'Processing...' : 'Scan & Extract Card'}
         </button>
       </div>
 
