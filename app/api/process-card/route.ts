@@ -15,7 +15,9 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    // MODEL NAME YAHAN CHANGE KIYA HAI
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     const base64Data = image.split(",")[1];
     
@@ -27,15 +29,14 @@ export async function POST(req: NextRequest) {
     ]);
 
     const responseText = result.response.text();
-    const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+    const jsonString = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-    return NextResponse.json({ result: JSON.parse(cleanJson) });
+    return NextResponse.json({ result: JSON.parse(jsonString) });
     
   } catch (error: any) {
-    // AB YAHAN ASLI ERROR MESSAGE frontend ko dikhega
-    console.error("DEBUG ERROR:", error);
+    console.error("Backend Error:", error);
     return NextResponse.json({ 
-      error: error.message || "Unknown error occurred" 
+      error: "Scanner Error: " + error.message 
     }, { status: 500 });
   }
 }
