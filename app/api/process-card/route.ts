@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Groq client
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Ensure GEMINI_API_KEY is set in Vercel Environment Variables
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,42 +10,40 @@ export async function POST(req: NextRequest) {
     const { image } = body;
 
     if (!image) {
-      return NextResponse.json({ error: "Image missing" }, { status: 400 });
+      return NextResponse.json({ error: "Image is missing" }, { status: 400 });
     }
 
-    const base64Image = image.includes(",") ? image.split(",")[1] : image;
+    // Clean base64 string
+    const base64Data = image.includes(",") ? image.split(",")[1] : image;
+    const mimeType = "image/jpeg";
 
-    // USE THIS MODEL. IT IS THE STABLE PRODUCTION MODEL.
-    // Ensure this string exactly matches: "llama-3.2-11b-vision-instruct"
-    const modelName = "llama-3.2-11b-vision-instruct";
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: "Extract details from this business card: name, jobTitle, company, email, phone, linkedinUrl. Return the result in valid JSON format ONLY. No markdown, no extra text." 
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64Image}` },
-            },
-          ],
-        },
-      ],
-      model: modelName,
-      response_format: { type: "json_object" },
-    });
+    const prompt = `Extract details from this business card: name, jobTitle, company, email, phone, linkedinUrl. 
+    Return the result in valid JSON format ONLY. 
+    Do not include any markdown formatting like \`\`\`json or \`\`\`. 
+    If a field is not found, return an empty string "" for that field.`;
 
-    const content = chatCompletion.choices[0]?.message?.content || "{}";
-    
-    // Parse and return the JSON
-    return NextResponse.json({ result: JSON.parse(content) });
+    const result = await model.generateContent([
+      prompt,
+      { inlineData: { data: base64Data, mimeType } }
+    ]);
+
+    const response = await result.response;
+    const text = response.text().trim();
+
+    // Remove any accidental markdown backticks just in case
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    const data = JSON.parse(cleanJson);
+
+    return NextResponse.json({ result: data });
 
   } catch (error: any) {
-    console.error("GROQ ERROR:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Gemini API Error:", error);
+    return NextResponse.json({ 
+      error: "Failed to process card", 
+      details: error.message 
+    }, { status: 500 });
   }
 }
