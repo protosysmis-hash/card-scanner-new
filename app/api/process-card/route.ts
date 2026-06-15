@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const base64Image = image.includes(",") ? image.split(",")[1] : image;
 
     // USE THIS MODEL. IT IS THE STABLE PRODUCTION MODEL.
+    // Ensure this string exactly matches: "llama-3.2-11b-vision-instruct"
     const modelName = "llama-3.2-11b-vision-instruct";
 
     const chatCompletion = await groq.chat.completions.create({
