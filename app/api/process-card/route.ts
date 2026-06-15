@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
     const key = apiKey || process.env.GEMINI_API_KEY;
     if (!key) {
-      return NextResponse.json({ error: "API Key missing in environment variables!" }, { status: 401 });
+      return NextResponse.json({ error: "API Key configure nahi hai!" }, { status: 401 });
     }
 
     const genAI = new GoogleGenerativeAI(key);
@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
 
     const base64Data = image.split(",")[1];
     
-    // AI ko instruction
     const prompt = "Extract contact details from this business card. Return ONLY a valid JSON object. Keys: name, jobTitle, company, email, phone, linkedinUrl, whatsappDraft.";
 
     const result = await model.generateContent([
@@ -33,12 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result: JSON.parse(cleanJson) });
     
   } catch (error: any) {
-    // AB YAHAN ASLI ERROR DIKHEGA
+    // AB YAHAN ASLI ERROR MESSAGE frontend ko dikhega
     console.error("DEBUG ERROR:", error);
     return NextResponse.json({ 
-      error: "Detailed Error", 
-      message: error.message || "Unknown error",
-      stack: error.stack 
+      error: error.message || "Unknown error occurred" 
     }, { status: 500 });
   }
 }
