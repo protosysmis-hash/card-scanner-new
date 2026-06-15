@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Model initialized with direct name
+    // Model initialized
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Image data clean karna
@@ -32,8 +32,13 @@ export async function POST(req: Request) {
 
     const responseText = result.response.text();
     
-    // Yahan syntax thik kiya gaya hai jo error de raha tha
-    const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+    // Yahan .split().join() ka use kiya hai jo build mein koi error nahi dega
+    const cleanJson = responseText
+      .split("```json")
+      .join("")
+      .split("```")
+      .join("")
+      .trim();
     
     return NextResponse.json({ result: JSON.parse(cleanJson) });
 
