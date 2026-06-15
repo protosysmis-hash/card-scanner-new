@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const base64Image = image.includes(",") ? image.split(",")[1] : image;
 
     // Using 11b model as it is highly stable for vision tasks on Groq
-    const modelName = "llama-3.2-11b-vision-instruct";
+    const modelName = "llama-3.2-11b-vision-preview";
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
