@@ -5,23 +5,24 @@ export async function POST(req: NextRequest) {
   try {
     const { image, apiKey } = await req.json();
 
+    // 1. API Key check - Ye logs mein dikhayega ki key mil rahi hai ya nahi
+    const key = apiKey || process.env.GEMINI_API_KEY;
+    console.log("Checking API Key: ", key ? "KEY FOUND" : "KEY MISSING");
+
+    if (!key) {
+      return NextResponse.json({ error: "Environment Variable GEMINI_API_KEY missing in Vercel!" }, { status: 401 });
+    }
+
     if (!image) {
       return NextResponse.json({ error: "Image missing" }, { status: 400 });
     }
 
-    const key = apiKey || process.env.GEMINI_API_KEY;
-
-    if (!key) {
-      return NextResponse.json({ error: "API Key missing" }, { status: 401 });
-    }
-
     const genAI = new GoogleGenerativeAI(key);
     
-    // Is baar hum "gemini-1.5-pro" use kar rahe hain jo sabse zyada stable hai
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // 2. Stable model use kar rahe hain
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const base64Data = image.split(",")[1];
-    
     const prompt = "Extract contact details from this business card. Return ONLY a valid JSON object. Keys: name, jobTitle, company, email, phone, linkedinUrl, whatsappDraft.";
 
     const result = await model.generateContent([
