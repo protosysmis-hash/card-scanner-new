@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
+// Initialize Groq client with API key from environment variables
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: NextRequest) {
@@ -14,15 +15,18 @@ export async function POST(req: NextRequest) {
 
     const base64Image = image.includes(",") ? image.split(",")[1] : image;
 
-    const prompt = `Extract details from this business card: name, jobTitle, company, email, phone, linkedinUrl. 
-    Return the result in valid JSON format ONLY. No markdown, no extra text.`;
+    // Using 11b model as it is highly stable for vision tasks on Groq
+    const modelName = "llama-3.2-11b-vision-instruct";
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
           role: "user",
           content: [
-            { type: "text", text: prompt },
+            { 
+              type: "text", 
+              text: "Extract details from this business card: name, jobTitle, company, email, phone, linkedinUrl. Return the result in valid JSON format ONLY. No markdown, no extra text." 
+            },
             {
               type: "image_url",
               image_url: { url: `data:image/jpeg;base64,${base64Image}` },
@@ -30,11 +34,13 @@ export async function POST(req: NextRequest) {
           ],
         },
       ],
-      model: "llama-3.2-90b-vision-instruct", 
+      model: modelName,
       response_format: { type: "json_object" },
     });
 
     const content = chatCompletion.choices[0]?.message?.content || "{}";
+    
+    // Parse and return the JSON
     return NextResponse.json({ result: JSON.parse(content) });
 
   } catch (error: any) {
