@@ -11,18 +11,17 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Model ka naam yahan rakha hai, agar 1.5-flash error de, 
-    // toh isse badal kar 'gemini-1.5-flash-latest' kar dena.
+    // Model initialized with direct name
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Image data clean karna
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
     
-    // MIME type detect karna (JPG ya PNG)
+    // MIME type detect karna
     const mimeType = image.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
 
     const result = await model.generateContent([
-      "Extract contact info as JSON: name, jobTitle, company, email, phone, address.",
+      "Extract contact info as JSON: name, jobTitle, company, email, phone, address. Only return the JSON object.",
       {
         inlineData: {
           data: base64Data,
@@ -32,14 +31,14 @@ export async function POST(req: Request) {
     ]);
 
     const responseText = result.response.text();
-    const cleanJson = responseText.replace(/```json/g, "").replace(/
-```/g, "").trim();
+    
+    // Yahan syntax thik kiya gaya hai jo error de raha tha
+    const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
     
     return NextResponse.json({ result: JSON.parse(cleanJson) });
 
   } catch (error: any) {
     console.error("API ERROR DETAILS:", error); 
-    // Ab error message mein specific detail milegi ki issue kya hai
     return NextResponse.json({ 
       error: "Scanner Error", 
       details: error.message || error.toString() 
