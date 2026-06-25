@@ -1,57 +1,70 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextResponse } from "next/server";
 
-// Initialize the API with the key from env
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { image } = body;
-
-    if (!image) {
-      return NextResponse.json({ error: "Image is missing" }, { status: 400 });
+    const { image } = await req.json();
+    
+    // API Key check
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("API Key missing in environment variables");
     }
 
-    // Clean base64 string
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Model wahi rakha hai jo tumne manga tha
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
-    const mimeType = "image/jpeg";
 
-    const model = genAI.getGenerativeModel({ model: "Gemini 3.1 Flash Lite" });
-
-    const prompt = `Extract details from this business card: name, jobTitle, company, email, phone, linkedinUrl. 
-    Return the result in valid JSON format ONLY. 
-    Do not include any markdown formatting. 
-    If a field is not found, return an empty string "" for that field.`;
+    // Strict Prompt: AI ko kaha hai ki saari details dhoonde
+    const prompt = `You are a business card scanner. Analyze the image and extract ALL of these details: name, jobTitle, company, email, phone, linkedinUrl, website, and address.
+    
+    Return the response as a strict JSON object. If a field is missing, return "Not provided".
+    
+    JSON format:
+    { 
+      "name": "", 
+      "jobTitle": "", 
+      "company": "", 
+      "email": "", 
+      "phone": "", 
+      "linkedinUrl": "", 
+      "website": "", 
+      "address": "", 
+      "whatsappDraft": "Write a professional follow-up message." 
+    }`;
 
     const result = await model.generateContent([
       prompt,
-      { inlineData: { data: base64Data, mimeType } }
+      { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
     ]);
 
     const response = await result.response;
-    const text = response.text().trim();
-    
-    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const data = JSON.parse(text);
 
-    try {
-      const data = JSON.parse(cleanJson);
-      return NextResponse.json({ result: data });
-    } catch (parseError) {
-      // If parsing fails, return the raw text as the detail so we can see what Gemini returned
-      return NextResponse.json({ 
-        error: "AI response was not valid JSON", 
-        details: text 
-      }, { status: 500 });
+    // Google Sheet Integration
+    const scriptUrl = process.env.GOOGLE_SCRIPT_URL;
+    if (scriptUrl) {
+      try {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        console.log("Data successfully sent to Google Sheet");
+      } catch (err) {
+        console.error("Sheet update failed:", err);
+      }
     }
 
+    return NextResponse.json({ result: data });
+
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    
-    // Return the actual error message from the API
-    return NextResponse.json({ 
-      error: "Failed to process card (Gemini API)", 
-      details: error.message || "Unknown error occurred" 
-    }, { status: 500 });
+    console.error("API Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
