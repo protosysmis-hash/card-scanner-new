@@ -71,7 +71,6 @@ export default function Home() {
         console.log("Scanned Data:", data.result);
         setCardData(data.result);
       } else {
-        // Yahan maine error detail dikhane ka code update kiya hai
         console.error("Scanner Error:", data.error);
         alert(`Scanner Error: ${data.error || "Unknown Error"}\nDetails: ${data.details || "No details provided"}`);
       }
@@ -126,84 +125,80 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-8 text-black">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">CardToConnect Clone (100% FREE)</h1>
-      
-      <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Upload or Take Photo of Card</label>
-          <input 
-            type="file" 
-            accept="image/*" 
-            capture="environment" 
-            onChange={handleImageChange} 
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
-          />
+    <div className="min-h-screen bg-[#0A0A0B] text-white p-4 md:p-8 font-sans selection:bg-blue-500 selection:text-white">
+      <div className="max-w-2xl mx-auto">
+        <header className="mb-10 text-center pt-8">
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-lg">
+              CardToConnect <span className="text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">Pro</span>
+            </h1>
+            <p className="text-gray-400 mt-2 font-medium tracking-wide">Business card se digital connect tak</p>
+        </header>
+        
+        <div className="bg-[#111112] p-6 md:p-8 rounded-[2.5rem] shadow-2xl border border-gray-800 hover:border-gray-700 transition-colors duration-500">
+          <div className="mb-6">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Upload Business Card</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="environment" 
+              onChange={handleImageChange} 
+              className="w-full text-sm text-gray-400 file:mr-4 file:py-4 file:px-8 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition cursor-pointer outline-none" 
+            />
+          </div>
+
+          {image && (
+             <div className="w-full h-64 mb-8 rounded-[2rem] bg-black border border-gray-800 shadow-inner overflow-hidden flex items-center justify-center p-2 relative group">
+                <img src={image} alt="Preview" className="max-h-full w-auto object-contain rounded-xl" />
+             </div>
+          )}
+
+          <button 
+            onClick={processCard} 
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-5 rounded-[1.5rem] shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:bg-gray-800 disabled:text-gray-500"
+          >
+            {loading ? 'AI Scanning Processing...' : 'Scan & Extract Data'}
+          </button>
         </div>
 
-        {image && <img src={image} alt="Preview" className="w-full h-48 object-contain mb-4 rounded-lg border" />}
-
-        <button 
-          onClick={processCard} 
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition disabled:bg-gray-400"
-        >
-          {loading ? 'Processing...' : 'Scan & Extract Card'}
-        </button>
-      </div>
-
-      {cardData && (
-        <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-md border border-gray-200 mt-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Extracted Contact Intel</h2>
-          <div className="space-y-2">
-            <p><strong>Name:</strong> {cardData.name}</p>
-            <p><strong>Job Title:</strong> {cardData.jobTitle}</p>
-            <p><strong>Company:</strong> {cardData.company}</p>
-            <p><strong>Email:</strong> {cardData.email}</p>
-            <p><strong>Phone:</strong> {cardData.phone}</p>
-            <p>
-              <strong>LinkedIn:</strong>{' '}
-              {cardData.linkedinUrl ? (
-                <a href={cardData.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">
-                  {cardData.linkedinUrl}
-                </a>
-              ) : (
-                <span className="text-gray-500 italic">Not on card (Ready to Search)</span>
-              )}
-            </p>
-          </div>
-          
-          <div className="mt-4 pt-4 border-t">
-            <h3 className="font-semibold text-gray-700 mb-2">AI Generated WhatsApp Follow-up:</h3>
-            <p className="bg-gray-50 p-3 rounded text-sm text-gray-600 italic mb-4">"{cardData.whatsappDraft}"</p>
+        {cardData && (
+          <div className="bg-[#111112] p-6 md:p-8 rounded-[2.5rem] shadow-2xl border border-gray-800 mt-8 space-y-8 animate-in fade-in zoom-in duration-500">
+            <h2 className="text-3xl font-extrabold text-white flex items-center gap-3">
+               Extracted Info <span className="flex h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { label: "Name", value: cardData.name },
+                { label: "Job Title", value: cardData.jobTitle },
+                { label: "Company", value: cardData.company },
+                { label: "Email", value: cardData.email },
+                { label: "Phone", value: cardData.phone },
+                { label: "Website", value: cardData.website }
+              ].map((item, idx) => (
+                  <div key={idx} className="bg-[#161618] p-5 rounded-2xl border border-gray-800/60 hover:border-blue-500/30 transition-colors">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{item.label}</p>
+                      <p className="font-semibold text-gray-200 mt-1">{item.value || "Not found"}</p>
+                  </div>
+              ))}
+              <div className="md:col-span-2 bg-[#161618] p-5 rounded-2xl border border-gray-800/60 hover:border-blue-500/30 transition-colors">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Address</p>
+                  <p className="font-semibold text-gray-200 mt-1">{cardData.address || "Not found"}</p>
+              </div>
+            </div>
             
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={sendWhatsApp}
-                disabled={!cardData.phone}
-                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1 disabled:bg-gray-300"
-              >
-                💬 WhatsApp
-              </button>
+            <div className="bg-gradient-to-br from-blue-900/40 to-blue-900/10 p-6 rounded-[2rem] border border-blue-500/20 backdrop-blur-md">
+              <h3 className="font-bold text-blue-400 mb-3 text-lg">Quick Actions:</h3>
+              <p className="text-gray-300 text-sm italic mb-6 bg-black/40 p-4 rounded-xl border border-blue-500/10">"{cardData.whatsappDraft}"</p>
               
-              <button
-                onClick={sendEmail}
-                disabled={!cardData.email}
-                className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1 disabled:bg-gray-300"
-              >
-                ✉️ Email
-              </button>
-
-              <button
-                onClick={openLinkedIn}
-                className="bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1"
-              >
-                🔗 LinkedIn
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={sendWhatsApp} disabled={!cardData.phone} className="flex-1 bg-[#1A1A1D] border border-green-500/30 text-green-400 font-bold py-4 rounded-xl text-sm hover:bg-green-500 hover:text-white disabled:opacity-40 transition-all duration-300">WhatsApp</button>
+                <button onClick={sendEmail} disabled={!cardData.email} className="flex-1 bg-[#1A1A1D] border border-rose-500/30 text-rose-400 font-bold py-4 rounded-xl text-sm hover:bg-rose-500 hover:text-white disabled:opacity-40 transition-all duration-300">Email</button>
+                <button onClick={openLinkedIn} className="flex-1 bg-[#1A1A1D] border border-blue-500/30 text-blue-400 font-bold py-4 rounded-xl text-sm hover:bg-blue-600 hover:text-white transition-all duration-300">LinkedIn</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
